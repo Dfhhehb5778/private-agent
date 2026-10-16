@@ -469,7 +469,11 @@ Answer questions, explain concepts, brainstorm, write emails/messages, and chat 
 
   /// Send a task execution message — no conversation history, low temperature, limited tokens.
   /// This is much faster and cheaper than sendMessage.
-  Future<AiResponse> sendTaskMessage(String systemPrompt, String prompt) async {
+  Future<AiResponse> sendTaskMessage(
+    String systemPrompt,
+    String prompt, {
+    String? imageBase64,
+  }) async {
     if (_apiKey == null || _apiKey!.isEmpty) {
       throw Exception('API Key is not configured. Please go to Settings.');
     }
@@ -480,9 +484,22 @@ Answer questions, explain concepts, brainstorm, write emails/messages, and chat 
     while (true) {
       try {
         currentTry++;
-        final messages = [
+        final List<Map<String, dynamic>> messages = [
           if (_useSystemPrompt) {'role': 'system', 'content': systemPrompt},
-          {'role': 'user', 'content': prompt},
+          {
+            'role': 'user',
+            'content': imageBase64 == null || imageBase64.isEmpty
+                ? prompt
+                : [
+                    {'type': 'text', 'text': prompt},
+                    {
+                      'type': 'image_url',
+                      'image_url': {
+                        'url': 'data:image/jpeg;base64,$imageBase64',
+                      },
+                    },
+                  ],
+          },
         ];
 
         String requestUrl = _baseUrl;

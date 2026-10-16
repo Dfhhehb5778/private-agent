@@ -244,6 +244,14 @@ Rules:
       final screenContent = _aiService.useScreenCompression
           ? await _screenService.getCompressedScreenDescription(userGoal)
           : await _screenService.getScreenDescription();
+
+      // Send visual context only for the configured Ollama Gemma 4 model.
+      // If screenshot capture fails, continue with text-only context.
+      String? screenImageBase64;
+      if (_aiService.baseUrl.contains('ollama.com') &&
+          _aiService.model == 'gemma4:31b') {
+        screenImageBase64 = await _screenService.takeScreenshot();
+      }
       developer.log(
         '=== SCREEN DUMP (Step ${step + 1}) ===\n$screenContent',
         name: 'PrivateAgent',
@@ -275,7 +283,11 @@ Step ${step + 1}/${_aiService.maxSteps}. Look at the text dump and coordinates. 
       String response;
       try {
         _cancelCompleter = Completer<void>();
-        final aiFuture = _aiService.sendTaskMessage(_taskSystemPrompt, prompt);
+        final aiFuture = _aiService.sendTaskMessage(
+          _taskSystemPrompt,
+          prompt,
+          imageBase64: screenImageBase64,
+        );
 
         // Race: whichever finishes first wins
         final result = await Future.any([
@@ -387,6 +399,7 @@ Step ${step + 1}/${_aiService.maxSteps}. Look at the text dump and coordinates. 
           final retryResponse = await _aiService.sendTaskMessage(
             _taskSystemPrompt,
             prompt,
+            imageBase64: screenImageBase64,
           );
           totalTokens += retryResponse.totalTokens;
           developer.log(
