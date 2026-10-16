@@ -227,17 +227,16 @@ Rules:
         return 'Task cancelled.';
       }
 
-      // Adaptive delay: give Android apps time to transition screens, load data, or open keyboards
-      int delay = 1200; // Default 1.2s delay for most actions
+      // Fast adaptive delays: keep a short buffer for Android UI transitions.
+      int delay = 350;
       if (lastAction == 'open_app') {
-        delay = 3000; // Apps need ~3 seconds to fully cold-start and render
+        delay = 1500;
       } else if (lastAction == 'type_text') {
-        delay =
-            2000; // Typing involves keyboards and often triggers heavy network requests (search)
+        delay = 600;
       } else if (lastAction == 'click_text' || lastAction == 'click_at') {
-        delay = 1500; // Clicking usually triggers a screen transition
-      } else if (lastAction == 'scroll') {
-        delay = 1000; // Scrolling is relatively fast
+        delay = 400;
+      } else if (lastAction == 'scroll' || lastAction == 'swipe') {
+        delay = 250;
       }
       await Future.delayed(Duration(milliseconds: delay));
 
